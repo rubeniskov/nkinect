@@ -10,10 +10,10 @@ cache:
   - vendor
 before_install:
   - sudo apt-get -qq update
-  - sudo apt-get install -y git build-essential cmake
-  - mkdir vendor && cd vendor; \
+  - sudo apt-get install -y git-core build-essential cmake
+  - mkdir -p vendor && cd vendor; \
     git clone https://github.com/OpenKinect/libfreenect && cd libfreenect; \
-    mkdir build && cd build; \
+    mkdir -p build && cd build; \
     cmake -L ..; \
     make -j$(nproc); \
     make install
