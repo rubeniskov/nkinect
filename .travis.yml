@@ -7,9 +7,16 @@ cache:
   bundler: true
   directories:
   - node_modules
+  - vendor
 before_install:
   - sudo apt-get -qq update
-  - sudo apt-get install -y libfreenect-dev
+  - sudo apt-get install -y git-core build-essential cmake
+  - mkdir vendor && cd vendor; \
+    git clone https://github.com/OpenKinect/libfreenect && cd libfreenect; \
+    mkdir build && cd build; \
+    cmake -L ..; \
+    make -j$(nproc); \
+    make install
 install:
   - npm install
 script:
