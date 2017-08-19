@@ -16,8 +16,6 @@ node_js:
   - "v6.0.0"
   - "v5.0.0"
   - "v4.1.0"
-matrix:
-  fast_finish: true
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
         echo "Installing required dependencies for Linux";
@@ -26,11 +24,10 @@ before_install:
     fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
         echo "Installing required dependencies for MacOS";
-        brew update;
-        brew list git &>/dev/null || brew install git;
-        brew list cmake &>/dev/null || brew install cmake;
-        brew list libusb &>/dev/null || brew install libusb;
-        brew list libtool &>/dev/null || brew install libtool;
+        brew update &>/dev/null;
+        for i in git cmake libusb libtool; do
+            brew list ${i} &>/dev/null || brew install ${i};
+        done;
     fi
   - if [ -z $(which freenect-camtest) ]; then
         echo "Installing libfreenect";
@@ -38,13 +35,11 @@ before_install:
         if [ ! -d libfreenect ]; then
             git clone https://github.com/OpenKinect/libfreenect;
         fi;
-        cd libfreenect;
-        mkdir -p build && cd build;
+        cd libfreenect && mkdir -p build && cd build;
         if [ ! -f bin/freenect-camtest ]; then
-            cmake -L ..;
-            make -j$(nproc);
+            cmake -L .. && make -j$(nproc);
         fi;
-        sudo make install
+        sudo make install;
     fi
   - if [ ! -d session ]; then
         echo "Downloading fakenect sample session";
