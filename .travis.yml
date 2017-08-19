@@ -1,0 +1,18 @@
+language: node_js
+node_js:
+  - "v6.1.0"
+  - "v5.11.1"
+  - "v4.4.4"
+  - "v0.12"
+  - "v0.10.45"
+  - "iojs-v1.8.4"
+  - "iojs-v2.5.0"
+  - "iojs-v3.3.1"
+cache:
+  bundler: true
+  directories:
+  - node_modules
+install:
+  - npm install
+script:
+  - npm test
