@@ -57,7 +57,7 @@
     "build": "babel src/module --out-dir lib --copy-files",
     "watch": "babel src/module --watch --out-dir lib --copy-files",
     "bundle": "npm run build && npm pack",
-    "test": "./scripts/fakenect $(pwd)/session mocha --compilers js:babel-core/register -- test/specs.js"
+    "test": "./scripts/fakenect $(pwd)/session node ./node_modules/.bin/mocha --compilers js:babel-core/register -- test/specs.js"
   },
   "gypfile": true,
   "dependencies": {

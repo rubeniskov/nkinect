@@ -17,19 +17,18 @@ node_js:
   - "v5.0.0"
   - "v4.1.0"
 before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-        echo "Installing required dependencies for Linux";
-        sudo apt-get -qq update;
-        sudo apt-get install -y git cmake build-essential libusb-1.0;
-    fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-        echo "Installing required dependencies for MacOS";
-        brew update &>/dev/null;
-        for i in git cmake libusb libtool; do
-            brew list ${i} &>/dev/null || brew install ${i};
-        done;
-    fi
   - if [ -z $(which freenect-camtest) ]; then
+        if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+            echo "Installing required dependencies for Linux";
+            sudo apt-get -qq update;
+            sudo apt-get install -y git cmake build-essential libusb-1.0;
+        elif [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+            echo "Installing required dependencies for MacOS";
+            brew update &>/dev/null;
+            for i in git cmake libusb libtool; do
+                brew list ${i} &>/dev/null || brew install ${i};
+            done;
+        fi;
         echo "Installing libfreenect";
         mkdir -p vendor && cd vendor;
         if [ ! -d libfreenect ]; then
