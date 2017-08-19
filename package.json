@@ -1,16 +1,81 @@
 {
-  "name": "node-freenect",
+  "name": "nkinect",
   "version": "0.0.0",
-  "description": "Node.js Addons Example #1",
-  "main": "freenect.js",
-  "private": true,
+  "description": "Node kinect binding with libfreenect and libusb-1.0",
+  "keywords": [
+    "kinect",
+    "freenect",
+    "video",
+    "depth",
+    "binding",
+    "wrapper"
+  ],
+  "main": "index.js",
+  "bin": "bin/nkinect",
+  "browser": "browser.js",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
+  "engines": {
+    "node": ">=0.12"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rubeniskov/nkinect.git",
+    "url_commit": "git+https://github.com/rubeniskov/nkinect/commit",
+    "url_tag": "git+https://github.com/rubeniskov/nkinect/releases/tag"
+  },
+  "author": {
+    "name": "Rubén López Gómez",
+    "email": "me@rubeniskov.com",
+    "url": "https://twitter.com/Rubeniskov"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://github.com/rubeniskov/nkinect/blob/master/LICENSE.md"
+    }
+  ],
+  "bugs": {
+    "url": "https://github.com/rubeniskov/nkinect/issues"
+  },
+  "homepage": "http://rubeniskov.com/projects/nkinect",
   "dependencies": {
     "bindings": "^1.2.1",
     "nan": "^2.6.2"
   },
-  "scripts": {
-    "test": "node freenect.js",
-    "build": "node-gyp configure build"
+  "babel": {
+    "presets": [
+      "es2015",
+      "stage-0"
+    ]
   },
-  "gypfile": true
+  "browserify": {
+    "transform": [
+      "babelify"
+    ]
+  },
+  "scripts": {
+    "install": "node-gyp configure build",
+    "docs": "mkdir -p ./docs/ && documentation build src/index.js -f md -o ./docs/reference.md",
+    "build": "babel src/module --out-dir lib --copy-files",
+    "watch": "babel src/module --watch --out-dir lib --copy-files",
+    "bundle": "npm run build && npm pack",
+    "test": "./scripts/fakenect $(pwd)/session mocha --compilers js:babel-core/register -- test/specs.js"
+  },
+  "gypfile": true,
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-core": "^6.26.0",
+    "babel-preset-es2015": "^6.24.1",
+    "babel-preset-stage-0": "^6.24.1",
+    "babelify": "^7.3.0",
+    "chai": "^4.1.1",
+    "chai-as-promised": "^7.1.1",
+    "chai-things": "^0.2.0",
+    "documentation": "^5.2.1",
+    "mocha": "^3.5.0",
+    "sinon": "^3.2.1",
+    "sinon-chai": "^2.13.0"
+  }
 }
