@@ -6,7 +6,7 @@ extern "C" {
   #include <libfreenect/libfreenect.h>
 }
 
-class Freenect : public Nan::ObjectWrap {
+class NKinect : public Nan::ObjectWrap {
 public:
 bool running_ = false;
 bool sending_ = false;
@@ -28,7 +28,7 @@ Nan::Callback *callback_video;
 Nan::Callback *callback_depth;
 static NAN_MODULE_INIT(Init) {
         v8::Local<v8::FunctionTemplate> tpl = Nan::New<v8::FunctionTemplate>(New);
-        tpl->SetClassName(Nan::New("Freenect").ToLocalChecked());
+        tpl->SetClassName(Nan::New("NKinect").ToLocalChecked());
         tpl->InstanceTemplate()->SetInternalFieldCount(1);
 
         Nan::SetPrototypeMethod(tpl, "getHandle", GetHandle);
@@ -40,7 +40,7 @@ static NAN_MODULE_INIT(Init) {
         Nan::SetPrototypeMethod(tpl, "pause", Pause);
 
         constructor().Reset(Nan::GetFunction(tpl).ToLocalChecked());
-        Nan::Set(target, Nan::New("Freenect").ToLocalChecked(),
+        Nan::Set(target, Nan::New("NKinect").ToLocalChecked(),
                  Nan::GetFunction(tpl).ToLocalChecked());
 }
 
@@ -103,7 +103,7 @@ void StartVideoCapture(const Nan::FunctionCallbackInfo<v8::Value>& info) {
                 return;
         };
 
-        freenect_set_video_callback(this->device_, Freenect::video_cb);
+        freenect_set_video_callback(this->device_, NKinect::video_cb);
 
         videoBuffer_ = (uint8_t*)malloc(videoMode_.bytes);
         //videoBuffer_ = v8::Buffer::New(videoMode_.bytes);
@@ -168,7 +168,7 @@ void DepthCallback(){
 
 static void depth_cb(freenect_device *dev, void *depth, uint32_t timestamp)
 {
-        Freenect* context = (Freenect *) freenect_get_user(dev);
+        NKinect* context = (NKinect *) freenect_get_user(dev);
         if (context->sending_) return;
         context->uv_async_depth_callback_.data = (void *) context;
         uv_async_send(&context->uv_async_depth_callback_);
@@ -176,25 +176,25 @@ static void depth_cb(freenect_device *dev, void *depth, uint32_t timestamp)
 
 static void
 async_depth_callback(uv_async_t *handle) {
-        Freenect* context = (Freenect *) handle->data;
+        NKinect* context = (NKinect *) handle->data;
         context->DepthCallback();
 }
 
 static void
 async_video_callback(uv_async_t *handle) {
-        Freenect* context = (Freenect *) handle->data;
+        NKinect* context = (NKinect *) handle->data;
         context->VideoCallback();
 }
 
 static void video_cb(freenect_device *dev, void *video, uint32_t timestamp)
 {
-        Freenect* context = (Freenect *) freenect_get_user(dev);
+        NKinect* context = (NKinect *) freenect_get_user(dev);
         if (context->sending_) return;
         context->uv_async_video_callback_.data = (void *) context;
         uv_async_send(&context->uv_async_video_callback_);
 }
 
-explicit Freenect(double value = 0) : value_(value) {
+explicit NKinect(double value = 0) : value_(value) {
         int user_device_number = 0;
         if (freenect_init(&this->context_, NULL) < 0) {
                 Nan::ThrowError("Error initializing freenect context");
@@ -222,7 +222,7 @@ explicit Freenect(double value = 0) : value_(value) {
 
 
 }
-~Freenect() {
+~NKinect() {
         ///this->Close();
 }
 
@@ -259,8 +259,8 @@ void ProcessEventsLoop(){
 
 void
 static pthread_callback(void *user_data) {
-        Freenect* freenect = static_cast<Freenect*>(user_data);
-        freenect->ProcessEventsLoop();
+        NKinect* kinect = static_cast<NKinect*>(user_data);
+        kinect->ProcessEventsLoop();
 }
 // protected:
 
@@ -268,11 +268,11 @@ private:
 static NAN_METHOD(New) {
         if (info.IsConstructCall()) {
                 double value = info[0]->IsUndefined() ? 0 : Nan::To<double>(info[0]).FromJust();
-                Freenect *obj = new Freenect(value);
+                NKinect *obj = new NKinect(value);
                 obj->Wrap(info.This());
                 info.GetReturnValue().Set(info.This());
         } else {
-                int argc = 1;
+                const int argc = 1;
                 v8::Local<v8::Value> argv[argc] = {info[0]};
                 v8::Local<v8::Function> cons = Nan::New(constructor());
                 info.GetReturnValue().Set(Nan::NewInstance(cons, argc, argv).ToLocalChecked());
@@ -280,35 +280,35 @@ static NAN_METHOD(New) {
 }
 
 static NAN_METHOD(GetHandle) {
-        Freenect* obj = Nan::ObjectWrap::Unwrap<Freenect>(info.Holder());
+        NKinect* obj = Nan::ObjectWrap::Unwrap<NKinect>(info.Holder());
         info.GetReturnValue().Set(obj->handle());
 }
 
 static NAN_METHOD(GetValue) {
-        Freenect* obj = Nan::ObjectWrap::Unwrap<Freenect>(info.Holder());
+        NKinect* obj = Nan::ObjectWrap::Unwrap<NKinect>(info.Holder());
         info.GetReturnValue().Set(obj->value_);
 }
 // TODO handle arguments here
 static NAN_METHOD(StartVideo) {
-        Freenect* obj = Nan::ObjectWrap::Unwrap<Freenect>(info.Holder());
+        NKinect* obj = Nan::ObjectWrap::Unwrap<NKinect>(info.Holder());
         obj->StartVideoCapture(info);
         info.GetReturnValue().Set(obj->handle());
 }
 // TODO handle arguments here
 static NAN_METHOD(StartDepth) {
-        Freenect* obj = Nan::ObjectWrap::Unwrap<Freenect>(info.Holder());
+        NKinect* obj = Nan::ObjectWrap::Unwrap<NKinect>(info.Holder());
         obj->StartDepthCapture(info);
         info.GetReturnValue().Set(obj->handle());
 }
 
 static NAN_METHOD(Resume) {
-        Freenect* obj = Nan::ObjectWrap::Unwrap<Freenect>(info.Holder());
+        NKinect* obj = Nan::ObjectWrap::Unwrap<NKinect>(info.Holder());
         obj->Resume_();
         info.GetReturnValue().Set(obj->handle());
 }
 
 static NAN_METHOD(Pause) {
-        Freenect* obj = Nan::ObjectWrap::Unwrap<Freenect>(info.Holder());
+        NKinect* obj = Nan::ObjectWrap::Unwrap<NKinect>(info.Holder());
         obj->Pause_();
         info.GetReturnValue().Set(obj->handle());
 }
@@ -322,7 +322,7 @@ static NAN_METHOD(TitlAngle) {
         }
 
         double angle = info[0]->NumberValue();
-        Freenect* obj = Nan::ObjectWrap::Unwrap<Freenect>(info.Holder());
+        NKinect* obj = Nan::ObjectWrap::Unwrap<NKinect>(info.Holder());
         obj->Tilt(angle);
         info.GetReturnValue().Set(obj->handle());
 }
@@ -335,4 +335,4 @@ static inline Nan::Persistent<v8::Function> & constructor() {
 double value_;
 };
 
-NODE_MODULE(objectwrapper, Freenect::Init)
+NODE_MODULE(objectwrapper, NKinect::Init)
