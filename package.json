@@ -40,10 +40,6 @@
     "url": "https://github.com/rubeniskov/nkinect/issues"
   },
   "homepage": "http://rubeniskov.com/projects/nkinect",
-  "dependencies": {
-    "bindings": "^1.2.1",
-    "nan": "^2.6.2"
-  },
   "babel": {
     "presets": [
       "es2015",
@@ -64,6 +60,15 @@
     "test": "./scripts/fakenect $(pwd)/session mocha --compilers js:babel-core/register -- test/specs.js"
   },
   "gypfile": true,
+  "dependencies": {
+    "bindings": "^1.2.1",
+    "keypress": "^0.2.1",
+    "nan": "^2.6.2"
+  },
+  "bundleDependencies": [
+    "bindings",
+    "nan"
+  ],
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.0",

@@ -17,9 +17,9 @@
                 "library_dirs": [
                     "/usr/local/lib"
                 ],
-                "libraries": [
-                    "lib<(freenect_libname).so"
-                ],
+                # "libraries": [
+                #     "lib<(freenect_libname).so"
+                # ],
                 "ldflags": [
                   "-l<(freenect_libname)",
                 ]

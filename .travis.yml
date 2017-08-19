@@ -1,13 +1,15 @@
 language: node_js
 node_js:
   - "v6.1.0"
+notifications:
+  slack: rubeniskov:I82ZGuYOEQrhl29wBbQFEdjP#nkinect
 cache:
   bundler: true
   directories:
   - node_modules
 before_install:
   - sudo apt-get -qq update
-  - sudo apt-get install -y freenect
+  - sudo apt-get install -y libfreenect-dev
 install:
   - npm install
 script:
