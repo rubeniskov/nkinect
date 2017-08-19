@@ -27,7 +27,10 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
         echo "Installing required dependencies for MacOS";
         brew update;
-        brew install --force git cmake libusb libtool;
+        brew list git &>/dev/null || brew install git;
+        brew list cmake &>/dev/null || brew install cmake;
+        brew list libusb &>/dev/null || brew install libusb;
+        brew list libtool &>/dev/null || brew install libtool;
     fi
   - if [ -z $(which freenect-camtest) ]; then
         echo "Installing libfreenect";
