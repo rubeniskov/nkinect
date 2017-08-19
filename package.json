@@ -10,6 +10,9 @@
     "binding",
     "wrapper"
   ],
+  "engines": {
+    "node": ">=6.1.0"
+  },
   "main": "index.js",
   "bin": "bin/nkinect",
   "browser": "browser.js",
