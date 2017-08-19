@@ -19,10 +19,6 @@ node_js:
 matrix:
   fast_finish: true
 before_install:
-  - if [ ! -d session ];
-        echo "Downloading fakenect sample session";
-        wget "https://drive.google.com/uc?export=download&id=0B-npeLS9ojmzSWVnVEZkUnBXaU0" -O - | tar -xz;
-    fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
         echo "Installing required dependencies for Linux";
         sudo apt-get -qq update;
@@ -46,6 +42,10 @@ before_install:
             make -j$(nproc);
         fi;
         sudo make install
+    fi
+  - if [ ! -d session ]; then
+        echo "Downloading fakenect sample session";
+        wget "https://drive.google.com/uc?export=download&id=0B-npeLS9ojmzSWVnVEZkUnBXaU0" -O - | tar -xz;
     fi
 install:
   - npm install
