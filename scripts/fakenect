@@ -1,0 +1,20 @@
+#!/bin/sh
+
+echo "Set $1 sample directory"
+case "$(uname -s)" in
+    Linux*)
+        echo "Linux OS detected"
+        LD_PRELOAD="/usr/local/lib/fakenect/libfakenect.so" \
+        FAKENECT_PATH="$1" \
+        ${@:2}
+    ;;
+    Darwin*)
+        echo "Mac OS detected"
+        DYLD_INSERT_LIBRARIES="/usr/local/lib/fakenect/libfreenect.dylib" \
+        DYLD_FORCE_FLAT_NAMESPACE=y \
+        FAKENECT_PATH="$1" \
+        ${@:2}
+    ;;
+    *)
+        echo "Incompatible OS"
+esac
