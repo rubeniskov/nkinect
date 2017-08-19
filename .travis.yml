@@ -1,3 +1,62 @@
+language: cpp
+os:
+  - linux
+  - osx
+sudo:
+  - false
+notifications:
+  slack: rubeniskov:I82ZGuYOEQrhl29wBbQFEdjP#nkinect
+cache:
+  bundler: true
+  directories:
+  - node_modules
+  - session
+  - vendor
+env:
+  - NODE_VERSION="v8.0.0"
+  - NODE_VERSION="v7.0.0"
+  - NODE_VERSION="v6.0.0"
+  - NODE_VERSION="v5.0.0"
+  - NODE_VERSION="v4.1.0"
+matrix:
+  fast_finish: true
+before_install:
+  - echo "Installing NVM";
+    git clone https://github.com/creationix/nvm.git /tmp/.nvm;
+    source /tmp/.nvm/nvm.sh;
+    nvm install $NODE_VERSION;
+    nvm use --delete-prefix $NODE_VERSION;
+  - echo "Downloading fakenect sample session";
+    wget "https://drive.google.com/uc?export=download&id=0B-npeLS9ojmzSWVnVEZkUnBXaU0" -O - | tar -xz
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+        echo "Installing required dependencies for Linux";
+        apt-get -qq update;
+        apt-get install -y git-core build-essential cmake libusb-1.0;
+    fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+        echo "Installing required dependencies for MacOS";
+        brew update;
+        brew install cmake libusb-1.0;
+    fi
+  - echo "Building  libfreenect"; 
+    mkdir -p vendor && cd vendor;
+    if [ ! -d libfreenect ]; then git clone https://github.com/OpenKinect/libfreenect; fi;
+    cd libfreenect;
+    mkdir -p build && cd build;
+    cmake -L ..;
+    make -j$(nproc);
+    sudo make install
+install:
+  - npm install
+before_script:
+  - npm run build
+script:
+  - npm test
+
+
+os:
+  - linux
+  - osx
 language: node_js
 node_js:
   - "v8.0.0"
@@ -5,6 +64,8 @@ node_js:
   - "v6.0.0"
   - "v5.0.0"
   - "v4.1.0"
+sudo:
+  - false
 notifications:
   slack: rubeniskov:I82ZGuYOEQrhl29wBbQFEdjP#nkinect
 cache:
@@ -15,8 +76,10 @@ cache:
   - vendor
 before_install:
   - wget "https://drive.google.com/uc?export=download&id=0B-npeLS9ojmzSWVnVEZkUnBXaU0" -O - | tar -xz
-  - sudo apt-get -qq update
-  - sudo apt-get install -y git-core build-essential cmake libusb-1.0
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+        apt-get -qq update;
+        apt-get install -y git-core build-essential cmake libusb-1.0;
+    fi
   - mkdir -p vendor && cd vendor;
     if [ ! -d libfreenect ]; then git clone https://github.com/OpenKinect/libfreenect; fi;
     cd libfreenect;
