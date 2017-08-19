@@ -16,7 +16,7 @@ before_install:
     mkdir -p build && cd build;
     cmake -L ..;
     make -j$(nproc);
-    make install
+    sudo make install
 install:
   - npm install
 script:
