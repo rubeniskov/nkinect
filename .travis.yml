@@ -11,11 +11,14 @@ cache:
   bundler: true
   directories:
   - node_modules
+  - session
 before_install:
+  - wget "https://drive.google.com/uc?export=download&id=0B-npeLS9ojmzSWVnVEZkUnBXaU0" -O - | tar -xz
   - sudo apt-get -qq update
   - sudo apt-get install -y git-core build-essential cmake libusb-1.0
   - mkdir -p vendor && cd vendor;
-    git clone https://github.com/OpenKinect/libfreenect && cd libfreenect;
+    if [ -d libfreenect ]; then git clone https://github.com/OpenKinect/libfreenect; fi;
+    cd libfreenect;
     mkdir -p build && cd build;
     cmake -L ..;
     make -j$(nproc);
