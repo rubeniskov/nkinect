@@ -2,8 +2,6 @@ language: node_js
 os:
   - linux
   - osx
-sudo:
-  - true
 notifications:
   slack: rubeniskov:I82ZGuYOEQrhl29wBbQFEdjP#nkinect
 cache:
@@ -25,13 +23,13 @@ before_install:
     wget "https://drive.google.com/uc?export=download&id=0B-npeLS9ojmzSWVnVEZkUnBXaU0" -O - | tar -xz
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
         echo "Installing required dependencies for Linux";
-        apt-get -qq update;
-        apt-get install -y git-core cmake build-essential libusb-1.0;
+        sudo apt-get -qq update;
+        sudo apt-get install -y git cmake build-essential libusb-1.0;
     fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
         echo "Installing required dependencies for MacOS";
         brew update;
-        brew install git-core cmake libusb-devel libtool;
+        brew install git cmake libusb libtool;
     fi
   - echo "Building  libfreenect";
     mkdir -p vendor && cd vendor;
