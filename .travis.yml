@@ -1,4 +1,4 @@
-language: cpp
+language: node_js
 os:
   - linux
   - osx
@@ -12,20 +12,15 @@ cache:
   - node_modules
   - session
   - vendor
-env:
-  - NODE_VERSION="v8.0.0"
-  - NODE_VERSION="v7.0.0"
-  - NODE_VERSION="v6.0.0"
-  - NODE_VERSION="v5.0.0"
-  - NODE_VERSION="v4.1.0"
+node_js:
+  - "v8.0.0"
+  - "v7.0.0"
+  - "v6.0.0"
+  - "v5.0.0"
+  - "v4.1.0"
 matrix:
   fast_finish: true
 before_install:
-  - echo "Installing NVM";
-    git clone https://github.com/creationix/nvm.git /tmp/.nvm;
-    source /tmp/.nvm/nvm.sh;
-    nvm install $NODE_VERSION;
-    nvm use --delete-prefix $NODE_VERSION;
   - echo "Downloading fakenect sample session";
     wget "https://drive.google.com/uc?export=download&id=0B-npeLS9ojmzSWVnVEZkUnBXaU0" -O - | tar -xz
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
