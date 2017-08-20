@@ -17,7 +17,7 @@ node_js:
   - "v5.0.0"
   - "v4.1.0"
 before_install:
-  - if [ -z $(which freenect-camtest) ]; then
+  - if [ ! -d /usr/local/include/libfreenect ]; then
         if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
             echo "Installing required dependencies for Linux";
             sudo apt-get -qq update;
@@ -36,7 +36,7 @@ before_install:
         fi;
         cd libfreenect && mkdir -p build && cd build;
         if [ ! -f bin/freenect-camtest ]; then
-            cmake -L .. && make -j$(nproc);
+            cmake -L .. -DBUILD_EXAMPLES=OFF -DBUILD_C_SYNC=OFF -DBUILD_REDIST_PACKAGE=OFF -DBUILD_CPP=OFF && make -j$(nproc);
         fi;
         sudo make install;
     fi
