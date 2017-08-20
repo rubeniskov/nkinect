@@ -36,14 +36,14 @@ before_install:
             git clone https://github.com/OpenKinect/libfreenect;
         fi;
         cd libfreenect && mkdir -p build && cd build;
-        if [ ! -f bin/freenect-camtest ]; then
+        if [ ! -f lib/libfreenect.dylib ]; then
             cmake -L .. -DBUILD_EXAMPLES=OFF -DBUILD_C_SYNC=OFF -DBUILD_REDIST_PACKAGE=OFF -DBUILD_CPP=OFF && make -j$(nproc);
         fi;
         sudo make install;
     fi
   - if [ ! -d session ]; then
         echo "Downloading fakenect sample session";
-        wget "https://drive.google.com/uc?export=download&id=0B-npeLS9ojmzSWVnVEZkUnBXaU0" -O - | tar -xz;
+        wget "https://s3.us-east-2.amazonaws.com/rubeniskov/fakenect.sample.tar.gz" -O - | tar -xz;
     fi
 install:
   - npm install
