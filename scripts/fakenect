@@ -10,7 +10,7 @@ case "$(uname -s)" in
     ;;
     Darwin*)
         echo "Mac OS detected"
-        DYLD_INSERT_LIBRARIES="/usr/local/lib/fakenect/libfreenect.dylib" \
+        DYLD_INSERT_LIBRARIES="/usr/local/lib/fakenect/libfakenect.dylib" \
         DYLD_FORCE_FLAT_NAMESPACE=y \
         FAKENECT_PATH="$1" \
         ${@:2}
