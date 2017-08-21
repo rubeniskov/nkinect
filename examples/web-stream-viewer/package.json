@@ -21,6 +21,7 @@
     "jpg-stream": "^1.1.1",
     "ndarray": "^1.0.18",
     "ndarray-ops": "^1.2.2",
-    "streamifier": "^0.1.1"
+    "streamifier": "^0.1.1",
+    "through2": "^2.0.3"
   }
 }
