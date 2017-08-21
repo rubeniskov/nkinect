@@ -27,7 +27,7 @@ app.get('/', function(req, res) {
   res.sendFile(__dirname + '/index.html');
 });
 
-app.get('/bundle.js', browserify('./client.js'));
+app.get('/bundle.js', browserify(__dirname + '/client.js'));
 
 app.get('/channel_depth', function(req, res) {
 

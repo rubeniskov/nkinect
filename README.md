@@ -56,7 +56,7 @@ Usage
 [travis-badge]: https://travis-ci.org/rubeniskov/nkinect.svg?style=flat-square
 
 [license-url]: LICENSE
-[license-badge]: https://img.shields.io/badge/license-WTFPL-blue.svg?style=flat-square
+[license-badge]: https://img.shields.io/badge/license-MIT-blue.svg.svg?style=flat-square
 
 [coverage-url]: https://codecov.io/github/rubeniskov/nkinect
 [coverage-img]: https://codecov.io/gh/rubeniskov/nkinect/branch/master/graphs/icicle.svg?width=400&height=72

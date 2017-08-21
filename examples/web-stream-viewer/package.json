@@ -6,7 +6,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "fakenect": "LD_PRELOAD=\"/usr/local/lib/fakenect/libfakenect.so\" FAKENECT_PATH=\"/root/node-freenect-custom/session\" node server.js"
+    "fakenect": "../../scripts/fakenect.sh ./session/ node ./server.js"
   },
   "author": "",
   "license": "ISC",

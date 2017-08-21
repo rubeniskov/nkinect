@@ -1,1 +1,1 @@
-module.exports = require('./lib/nkinect.js')
+module.exports = require('./lib/nkinect.js').default;
