@@ -6,7 +6,7 @@ export default class NKinect extends NKinectDevice {
         return new NKinect(options);
     }
     constructor(options){
-        super(options)
+        super(options);
     }
     createVideoStream(options){
         return new NKinectDepthStream(this, options);

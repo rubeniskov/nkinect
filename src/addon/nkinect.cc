@@ -255,7 +255,9 @@ static NAN_MODULE_INIT(Init) {
 
         Nan::SetPrototypeMethod(tpl, "titlAngle", TitlAngle);
         Nan::SetPrototypeMethod(tpl, "startVideo", StartVideo);
+        Nan::SetPrototypeMethod(tpl, "stopVideo", StopVideo);
         Nan::SetPrototypeMethod(tpl, "startDepth", StartDepth);
+        Nan::SetPrototypeMethod(tpl, "stopDepth", StopDepth);
         Nan::SetPrototypeMethod(tpl, "resume", Resume);
         Nan::SetPrototypeMethod(tpl, "pause", Pause);
 
@@ -360,6 +362,17 @@ static NAN_METHOD(Pause) {
         info.GetReturnValue().Set(obj->handle());
 }
 
+static NAN_METHOD(StopVideo) {
+        NKinect* obj = Nan::ObjectWrap::Unwrap<NKinect>(info.Holder());
+        obj->StopVideoCapture();
+        info.GetReturnValue().Set(obj->handle());
+}
+
+static NAN_METHOD(StopDepth) {
+        NKinect* obj = Nan::ObjectWrap::Unwrap<NKinect>(info.Holder());
+        obj->StopDepthCapture();
+        info.GetReturnValue().Set(obj->handle());
+}
 static NAN_METHOD(TitlAngle) {
         if (info.Length() == 1) {
                 if (!info[0]->IsNumber())

@@ -2,23 +2,21 @@ import Readable from "readable-stream/readable";
 
 export class NKinectStream extends Readable {
     constructor(options){
-        if (new.target === NKinectStream)
-            throw new TypeError("Cannot construct Abstract instances directly");
         super(options);
         this.on('unpipe', () => {
             if(!this._readableState.pipesCount){
                 this._stop();
             }
         });
-        process.nextTick(()=>{
-            this._start();
-        })
+    }
+    _read(){
+        this._start();
     }
     _writeData(buff, timestamp){
         if(this._readableState.writableObjectMode || this._readableState.objectMode)
-            this.write({data: buff, timestamp: timestamp});
+            this.emit('data', {data: buff, timestamp: timestamp});
         else
-            this.write(buff);
+            this.emit('data', buff);
     }
     _start(){
 
@@ -52,7 +50,7 @@ export class NKinectVideoStream extends NKinectStream {
         this._context = context;
     }
     _start(){
-        this._context.startVideo(this._options, (buff, timestamp) => {
+        this._context.startVideo(options, (buff, timestamp) => {
             this._writeData(buff, timestamp);
         });
     }

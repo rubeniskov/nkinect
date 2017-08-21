@@ -138,7 +138,7 @@ export default class NKinectDevice {
     startDepth(options, cb){
         this._context.startDepth(this._options.depth = {
           resolution: NKinectDevice.RESOLUTION.MEDIUM,
-          format: NKinectDevice.VIDEO_DEPTH.F11BIT,
+          format: NKinectDevice.DEPTH_FORMAT.F11BIT,
           ...options}, cb || options);
         return this;
     }
