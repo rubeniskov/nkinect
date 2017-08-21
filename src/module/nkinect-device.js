@@ -110,7 +110,7 @@ export default class NKinectDevice {
         return this;
     }
     setTiltAngle(angle){
-        this._context.setTiltAngle(Math.min(this._options.maxTiltAngle, 31, Math.max(this.minTiltAngle, -31, angle)));
+        this._context.setTiltAngle(Math.min(this._options.maxTiltAngle, 31, Math.max(this._options.minTiltAngle, -31, angle)));
         return this;
     }
     getTiltAngle(){

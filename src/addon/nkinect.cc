@@ -283,7 +283,7 @@ static NAN_MODULE_INIT(Init) {
         Nan::SetAccessor(tpl->InstanceTemplate(), Nan::New<v8::String>("running").ToLocalChecked(), getRunning);
         Nan::SetAccessor(tpl->InstanceTemplate(), Nan::New<v8::String>("sending").ToLocalChecked(), getSending);
 
-        Nan::SetPrototypeMethod(tpl, "setTiltAngle", TitlAngle);
+        Nan::SetPrototypeMethod(tpl, "setTiltAngle", TiltAngle);
         Nan::SetPrototypeMethod(tpl, "setLedStatus", LedStatus);
         Nan::SetPrototypeMethod(tpl, "startVideo", StartVideo);
         Nan::SetPrototypeMethod(tpl, "stopVideo", StopVideo);
@@ -382,7 +382,7 @@ static NAN_METHOD(StopDepth) {
         obj->StopDepthCapture();
         info.GetReturnValue().Set(obj->handle());
 }
-static NAN_METHOD(TitlAngle) {
+static NAN_METHOD(TiltAngle) {
         if (info.Length() == 1) {
                 if (!info[0]->IsNumber())
                         return Nan::ThrowError("Tilt argument must be a number\n");
