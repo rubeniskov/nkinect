@@ -9,9 +9,9 @@ export default class NKinect extends NKinectDevice {
         super(options);
     }
     createVideoStream(options){
-        return new NKinectDepthStream(this, options);
+        return new NKinectVideoStream(this, options);
     }
     createDepthStream(options){
-        return new NKinectVideoStream(this, options);
+        return new NKinectDepthStream(this, options);
     }
 }

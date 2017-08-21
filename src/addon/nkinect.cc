@@ -33,6 +33,7 @@ void StartDepthCapture(const v8::Local<v8::Function> &callback) {
 
 void StartDepthCapture(const v8::Local<v8::Function> &callback, const v8::Local<v8::Object> &options) {
 
+        this->StopDepthCapture();
         this->callback_depth = new Nan::Callback(callback);
         this->depthMode_ = this->getFrameModeByOptions(NKinectFrameModeDepth, options);
         if(!this->depthMode_.is_valid) {
@@ -47,7 +48,7 @@ void StartDepthCapture(const v8::Local<v8::Function> &callback, const v8::Local<
 
         freenect_set_depth_callback(this->device_, depth_cb);
 
-        this->depthBuffer_ = (uint8_t*)malloc(depthMode_.bytes);
+        this->depthBuffer_ = (uint8_t*)malloc(this->depthMode_.bytes);
 
         if (freenect_set_depth_buffer(this->device_, this->depthBuffer_) != 0) {
                 Nan::ThrowError("Error setting depth buffer\n");
@@ -76,8 +77,10 @@ void StartVideoCapture(const v8::Local<v8::Function> &callback) {
 
 void StartVideoCapture(const v8::Local<v8::Function> &callback, const v8::Local<v8::Object> &options) {
 
+        this->StopVideoCapture();
         this->callback_video = new Nan::Callback(callback);
         this->videoMode_ = this->getFrameModeByOptions(NKinectFrameModeVideo, options);
+        // this->videoMode_ = freenect_find_video_mode(FREENECT_RESOLUTION_MEDIUM, FREENECT_VIDEO_RGB);
         if(!this->videoMode_.is_valid) {
                 Nan::ThrowError("Invalid video configuration\n");
                 return;
@@ -90,7 +93,7 @@ void StartVideoCapture(const v8::Local<v8::Function> &callback, const v8::Local<
 
         freenect_set_video_callback(this->device_, NKinect::video_cb);
 
-        this->videoBuffer_ = (uint8_t*)malloc(videoMode_.bytes);
+        this->videoBuffer_ = (uint8_t*)malloc(this->videoMode_.bytes);
 
         if (freenect_set_video_buffer(this->device_, this->videoBuffer_) != 0) {
                 Nan::ThrowError("Error setting video buffer\n");
@@ -284,6 +287,7 @@ freenect_frame_mode getFrameModeByOptions(NKinectFrameMode mode, const v8::Local
                   res = Nan::New<v8::Number>(FREENECT_VIDEO_RGB);
               // printf("as %d", fmt->Uint32Value());
               return freenect_find_video_mode(static_cast<freenect_resolution>(res->Uint32Value()), static_cast<freenect_video_format>(fmt->Uint32Value()));
+              // return freenect_find_video_mode(static_cast<freenect_resolution>(res->Uint32Value()), FREENECT_VIDEO_RGB);
           break;
         }
 }

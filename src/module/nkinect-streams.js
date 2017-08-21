@@ -2,7 +2,9 @@ import Readable from "readable-stream/readable";
 
 export class NKinectStream extends Readable {
     constructor(options){
-        super(options);
+        super({
+            allowHalfOpen: true,
+            ...options});
         this.on('unpipe', () => {
             if(!this._readableState.pipesCount){
                 this._stop();
@@ -50,7 +52,7 @@ export class NKinectVideoStream extends NKinectStream {
         this._context = context;
     }
     _start(){
-        this._context.startVideo(options, (buff, timestamp) => {
+        this._context.startVideo(this._options, (buff, timestamp) => {
             this._writeData(buff, timestamp);
         });
     }
