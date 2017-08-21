@@ -184,7 +184,7 @@ explicit NKinect(double value = 0) : value_(value) {
         }
         freenect_set_log_level(this->context_, FREENECT_LOG_DEBUG);
         // freenect_set_log_level(this->context_, FREENECT_LOG_SPEW);
-        freenect_select_subdevices(this->context_, (freenect_device_flags)(FREENECT_DEVICE_MOTOR | FREENECT_DEVICE_CAMERA | FREENECT_DEVICE_AUDIO));
+        freenect_select_subdevices(this->context_, (freenect_device_flags)(FREENECT_DEVICE_MOTOR | FREENECT_DEVICE_CAMERA));
         int nr_devices = freenect_num_devices(this->context_);
         if (nr_devices < 1) {
                 this->Close();
