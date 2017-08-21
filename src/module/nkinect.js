@@ -1,5 +1,17 @@
-var addon = require('bindings')('nkinect');
+import NKinectDevice from "./nkinect-device";
+import {NKinectDepthStream, NKinectVideoStream} from "./nkinect-streams";
 
-module.exports = function(){
-    return addon.NKinect();
+export default class NKinect extends NKinectDevice {
+    call constructor(options) {
+        return new NKinect(options);
+    }
+    constructor(options){
+        super(options)
+    }
+    createVideoStream(options){
+        return new NKinectDepthStream(this, options);
+    }
+    createDepthStream(options){
+        return new NKinectVideoStream(this, options);
+    }
 }
