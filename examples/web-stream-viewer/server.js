@@ -90,7 +90,7 @@ app.get('/channel_depth', channelHandler('depth'));
 app.get('/channel_video', channelHandler('video'));
 
 app.post('/tilt', function(req, res) {
-  kinect.setTitlAngle(req.params.angle || req.body.angle || 0);
+  kinect.setTiltAngle(req.params.angle || req.body.angle || 0);
   res.send({status: 'OK'})
 });
 

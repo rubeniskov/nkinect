@@ -1,5 +1,5 @@
 var axios = require('axios'),
-    channel = window.location.protocol + '//' + window.location.host + '/channel_depth',
+    channel = window.location.protocol + '//' + window.location.host + '/channel_video',
     MJPEG = require('./player'),
     slider = document.getElementById('slider1'),
     player = new MJPEG.Player("canvas", channel);
