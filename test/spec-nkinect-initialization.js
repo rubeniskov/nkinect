@@ -1,3 +1,3 @@
-import kinect from "..";
+// import kinect from "..";
 
-console.log(kinect());
+// console.log(kinect());

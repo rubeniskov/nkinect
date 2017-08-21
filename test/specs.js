@@ -17,7 +17,6 @@ global.expect = chai
 
 
 describe(util.format('%s@%s', pkg.name, pkg.version), () => {
-    describe('#Core', () => {
-        require('./spec-nkinect-initialization');
-    });
+    require('./spec-nkinect-initialization');
+    require('./spec-nkinect-streams');
 });
