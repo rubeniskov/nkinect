@@ -8,9 +8,9 @@ export const NKINECT_CAPABILITIES = {
 }
 
 export const NKINECT_RESOLUTION = {
-    'LOW': 0x0,
-    'MEDIUM': 0x1,
-    'HIGH': 0x2,
+    'LOW': 0x0, // QVGA - 320x240
+    'MEDIUM': 0x1, // VGA - 640x480
+    'HIGH': 0x2, // SXGA - 1280x1024
     'DUMMY': 2147483647
 }
 
