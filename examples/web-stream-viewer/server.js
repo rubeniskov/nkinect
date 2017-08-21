@@ -22,24 +22,12 @@ var reArrangeBuffer = (type) => {
   return through(function(chunk, enc, done) {
     var data = new Buffer(width * height * 4);
 
-    for (var i = 0; i < width * height; i++) {
-      if (type === 'depth') {
-        var depth = (chunk[2 * i] + chunk[2 * i + 1] * 255) / 5;
-        data[4 * i] = depth;
-        data[4 * i + 1] = depth;
-        data[4 * i + 2] = depth;
-      } else {
-        data[4 * i] = chunk[3 * i];
-        data[4 * i + 1] = chunk[3 * i + 1];
-        data[4 * i + 2] = chunk[3 * i + 2];
-      }
-      data[4 * i + 3] = 255;
-      // data[4*i]   = type === 'depth' ? (depth = (chunk[2*i]+chunk[2*i+1]*255)/5) : chunk[3*i];
-      // data[4*i+1] = type === 'depth' ? depth : chunk[3*i+1];
-      // data[4*i+2] = type === 'depth' ? depth : chunk[3*i+2];
-      // data[4*i+3] = type === 'depth' ? 255 : chunk[3*i+2];;
+    for (var i = 0, depth; i < width * height; i++) {
+        data[4*i]   = type === 'depth' ? (depth = (chunk[2*i]+chunk[2*i+1]*255)/5) : chunk[3*i];
+        data[4*i+1] = type === 'depth' ? depth : chunk[3*i+1];
+        data[4*i+2] = type === 'depth' ? depth : chunk[3*i+2];
+        data[4*i+3] = type === 'depth' ? 255 : chunk[3*i+2];;
     }
-
     this.push(data);
     done && done();
   })
@@ -102,7 +90,7 @@ app.get('/channel_depth', channelHandler('depth'));
 app.get('/channel_video', channelHandler('video'));
 
 app.post('/tilt', function(req, res) {
-  kinect.setTiltAngle(req.params.angle || req.body.angle || 0);
+  kinect.titlAngle(req.params.angle || req.body.angle || 0);
   res.send({status: 'OK'})
 });
 
