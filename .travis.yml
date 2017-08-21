@@ -16,7 +16,6 @@ node_js:
   - "v7.0.0"
   - "v6.0.0"
   - "v5.0.0"
-  - "v4.1.0"
 before_install:
   - if [ ! -d /usr/local/include/libfreenect ]; then
         if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
