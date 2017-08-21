@@ -12,197 +12,226 @@ enum NKinectFrameMode {
 
 class NKinect : public Nan::ObjectWrap {
 public:
-bool running_ = false;
-bool sending_ = false;
-freenect_device*       device_;
-freenect_context*      context_;
-freenect_frame_mode depthMode_;
-freenect_frame_mode videoMode_;
-uv_async_t uv_async_video_callback_;
-uv_async_t uv_async_depth_callback_;
-uint8_t *videoBuffer_;
-uint8_t *depthBuffer_;
+bool running = false;
+bool sending = false;
+freenect_device*       device;
+freenect_context*      context;
+freenect_frame_mode depthMode;
+freenect_frame_mode videoMode;
+uv_async_t uv_async_video_callback;
+uv_async_t uv_async_depth_callback;
+uint8_t *videoBuffer;
+uint8_t *depthBuffer;
 uv_loop_t *loop = uv_default_loop();
-uv_thread_t event_thread_;
+uv_thread_t event_thread;
 Nan::Callback *callback_video;
 Nan::Callback *callback_depth;
 
 void StartDepthCapture(const v8::Local<v8::Function> &callback) {
-    return this->StartDepthCapture(callback, Nan::New<v8::Object>());
+        return this->StartDepthCapture(callback, Nan::New<v8::Object>());
 }
 
 void StartDepthCapture(const v8::Local<v8::Function> &callback, const v8::Local<v8::Object> &options) {
-
+        // Check if previous video capture running settings are the same and ignore stop and initialization
         this->StopDepthCapture();
         this->callback_depth = new Nan::Callback(callback);
-        this->depthMode_ = this->getFrameModeByOptions(NKinectFrameModeDepth, options);
-        if(!this->depthMode_.is_valid) {
+        this->depthMode = NKinect::freenect_get_frame_mode_by_options(NKinectFrameModeDepth, options);
+        if(!this->depthMode.is_valid) {
                 Nan::ThrowError("Invalid depth configuration\n");
                 return;
         }
 
-        if (freenect_set_depth_mode(this->device_, this->depthMode_) != 0) {
+        if (freenect_set_depth_mode(this->device, this->depthMode) != 0) {
                 Nan::ThrowError("Error setting depth mode\n");
                 return;
         };
 
-        freenect_set_depth_callback(this->device_, depth_cb);
+        freenect_set_depth_callback(this->device, NKinect::freenect_device_depth_cb);
 
-        this->depthBuffer_ = (uint8_t*)malloc(this->depthMode_.bytes);
+        this->depthBuffer = (uint8_t*)malloc(this->depthMode.bytes);
 
-        if (freenect_set_depth_buffer(this->device_, this->depthBuffer_) != 0) {
+        if (freenect_set_depth_buffer(this->device, this->depthBuffer) != 0) {
                 Nan::ThrowError("Error setting depth buffer\n");
                 return;
         };
 
-        if (freenect_start_depth(this->device_) != 0) {
+        if (freenect_start_depth(this->device) != 0) {
                 Nan::ThrowError("Error starting depth\n");
                 return;
         }
 
-        uv_async_init(this->loop, &this->uv_async_depth_callback_, async_depth_callback);
+        uv_async_init(this->loop, &this->uv_async_depth_callback, NKinect::async_depth_callback);
 }
 
 void StopDepthCapture(){
-        freenect_stop_depth(this->device_);
+        freenect_stop_depth(this->device);
 }
 
-void Tilt(const double angle) {
-        freenect_set_tilt_degs(this->device_, angle);
+void SetTiltAngle(const double angle) {
+        freenect_set_tilt_degs(this->device, angle);
 }
 
 void StartVideoCapture(const v8::Local<v8::Function> &callback) {
-    return this->StartVideoCapture(callback, Nan::New<v8::Object>());
+        return this->StartVideoCapture(callback, Nan::New<v8::Object>());
 }
 
 void StartVideoCapture(const v8::Local<v8::Function> &callback, const v8::Local<v8::Object> &options) {
-
+        // Check if previous video capture running settings are the same and ignore stop and initialization
         this->StopVideoCapture();
         this->callback_video = new Nan::Callback(callback);
-        this->videoMode_ = this->getFrameModeByOptions(NKinectFrameModeVideo, options);
-        // this->videoMode_ = freenect_find_video_mode(FREENECT_RESOLUTION_MEDIUM, FREENECT_VIDEO_RGB);
-        if(!this->videoMode_.is_valid) {
+        this->videoMode = NKinect::freenect_get_frame_mode_by_options(NKinectFrameModeVideo, options);
+        // this->videoMode = freenect_find_video_mode(FREENECT_RESOLUTION_MEDIUM, FREENECT_VIDEO_RGB);
+        if(!this->videoMode.is_valid) {
                 Nan::ThrowError("Invalid video configuration\n");
                 return;
         }
 
-        if (freenect_set_video_mode(this->device_, this->videoMode_) != 0) {
+        if (freenect_set_video_mode(this->device, this->videoMode) != 0) {
                 Nan::ThrowError("Error setting video mode\n");
                 return;
         };
 
-        freenect_set_video_callback(this->device_, NKinect::video_cb);
+        freenect_set_video_callback(this->device, NKinect::freenect_device_video_cb);
 
-        this->videoBuffer_ = (uint8_t*)malloc(this->videoMode_.bytes);
+        this->videoBuffer = (uint8_t*)malloc(this->videoMode.bytes);
 
-        if (freenect_set_video_buffer(this->device_, this->videoBuffer_) != 0) {
+        if (freenect_set_video_buffer(this->device, this->videoBuffer) != 0) {
                 Nan::ThrowError("Error setting video buffer\n");
                 return;
         };
 
-        if (freenect_start_video(this->device_) != 0) {
+        if (freenect_start_video(this->device) != 0) {
                 Nan::ThrowError("Error starting video\n");
                 return;
         }
 
-        uv_async_init(this->loop, &this->uv_async_video_callback_, async_video_callback);
+        uv_async_init(this->loop, &this->uv_async_video_callback, NKinect::async_video_callback);
 }
 
 void StopVideoCapture(){
-        freenect_stop_video(this->device_);
+        freenect_stop_video(this->device);
 }
 
-void Resume_(){
-        if (!this->running_) {
-                this->running_ = true;
-                if(uv_thread_create(&this->event_thread_, pthread_callback, (void*)this) != 0) {
+void Resume(){
+        if (!this->running) {
+                this->running = true;
+                if(uv_thread_create(&this->event_thread, NKinect::pthread_callback, (void*)this) != 0) {
                         Nan::ThrowError("Error creating thread\n");
                         return;
                 }
         }
 }
 
-void Pause_(){
-        if (this->running_) {
-                this->running_ = false;
-                uv_thread_join(&this->event_thread_);
+void Pause(){
+        if (this->running) {
+                this->running = false;
+                uv_thread_join(&this->event_thread);
         }
 }
 
 void VideoCallback(){
-        this->sending_ = true;
+        this->sending = true;
         const unsigned argc = 1;
         v8::Isolate * isolate = v8::Isolate::GetCurrent();
         v8::HandleScope handleScope(isolate);
-        Nan::MaybeLocal<v8::Object> buffer = Nan::CopyBuffer((char*)videoBuffer_, videoMode_.bytes);
+        Nan::MaybeLocal<v8::Object> buffer = Nan::CopyBuffer((char*)this->videoBuffer, this->videoMode.bytes);
         v8::Local<v8::Value> argv[argc] = { buffer.ToLocalChecked() };
         this->callback_video->Call(argc, argv);
-        this->sending_ = false;
+        this->sending = false;
 }
 
 void DepthCallback(){
-        this->sending_ = true;
+        this->sending = true;
         const unsigned argc = 1;
         v8::Isolate * isolate = v8::Isolate::GetCurrent();
         v8::HandleScope handleScope(isolate);
-        Nan::MaybeLocal<v8::Object> buffer = Nan::CopyBuffer((char*)depthBuffer_, depthMode_.bytes);
+        Nan::MaybeLocal<v8::Object> buffer = Nan::CopyBuffer((char*)this->depthBuffer, this->depthMode.bytes);
         v8::Local<v8::Value> argv[argc] = { buffer.ToLocalChecked() };
         this->callback_depth->Call(argc, argv);
-        this->sending_ = false;
+        this->sending = false;
 }
 
-static void depth_cb(freenect_device *dev, void *depth, uint32_t timestamp)
+static
+void
+freenect_device_depth_cb(freenect_device *dev, void *depth, uint32_t timestamp)
 {
         NKinect* context = (NKinect *) freenect_get_user(dev);
-        if (context->sending_) return;
-        context->uv_async_depth_callback_.data = (void *) context;
-        uv_async_send(&context->uv_async_depth_callback_);
+        if (context->sending) return;
+        context->uv_async_depth_callback.data = (void *) context;
+        uv_async_send(&context->uv_async_depth_callback);
 }
 
-static void
+static
+void
 async_depth_callback(uv_async_t *handle) {
         NKinect* context = (NKinect *) handle->data;
         context->DepthCallback();
 }
 
-static void
+static
+void
 async_video_callback(uv_async_t *handle) {
         NKinect* context = (NKinect *) handle->data;
         context->VideoCallback();
 }
 
-static void video_cb(freenect_device *dev, void *video, uint32_t timestamp)
+static
+void
+freenect_device_video_cb(freenect_device *dev, void *video, uint32_t timestamp)
 {
         NKinect* context = (NKinect *) freenect_get_user(dev);
-        if (context->sending_) return;
-        context->uv_async_video_callback_.data = (void *) context;
-        uv_async_send(&context->uv_async_video_callback_);
+        if (context->sending) return;
+        context->uv_async_video_callback.data = (void *) context;
+        uv_async_send(&context->uv_async_video_callback);
+}
+static
+freenect_frame_mode
+freenect_get_frame_mode_by_options(NKinectFrameMode mode, const v8::Local<v8::Object> &options){
+        v8::Local<v8::Value> fmt = options->Get(Nan::New<v8::String>("format").ToLocalChecked());
+        v8::Local<v8::Value> res = options->Get(Nan::New<v8::String>("resolution").ToLocalChecked());
+
+        if(!fmt->IsNumber())
+                res = Nan::New<v8::Number>(FREENECT_RESOLUTION_MEDIUM);
+        switch (mode) {
+        case NKinectFrameModeDepth:
+                if(!fmt->IsNumber())
+                        res = Nan::New<v8::Number>(FREENECT_DEPTH_11BIT);
+                return freenect_find_depth_mode(static_cast<freenect_resolution>(res->Uint32Value()), static_cast<freenect_depth_format>(fmt->Uint32Value()));
+                break;
+        case NKinectFrameModeVideo:
+                if(!fmt->IsNumber())
+                        res = Nan::New<v8::Number>(FREENECT_VIDEO_RGB);
+                // printf("as %d", fmt->Uint32Value());
+                return freenect_find_video_mode(static_cast<freenect_resolution>(res->Uint32Value()), static_cast<freenect_video_format>(fmt->Uint32Value()));
+                // return freenect_find_video_mode(static_cast<freenect_resolution>(res->Uint32Value()), FREENECT_VIDEO_RGB);
+                break;
+        }
 }
 
 explicit NKinect(double value = 0) : value_(value) {
         int user_device_number = 0;
-        if (freenect_init(&this->context_, NULL) < 0) {
+        if (freenect_init(&this->context, NULL) < 0) {
                 Nan::ThrowError("Error initializing freenect context");
                 return;
         }
-        freenect_set_log_level(this->context_, FREENECT_LOG_DEBUG);
-        // freenect_set_log_level(this->context_, FREENECT_LOG_SPEW);
-        freenect_select_subdevices(this->context_, (freenect_device_flags)(FREENECT_DEVICE_MOTOR | FREENECT_DEVICE_CAMERA));
-        int nr_devices = freenect_num_devices(this->context_);
+        freenect_set_log_level(this->context, FREENECT_LOG_DEBUG);
+        // freenect_set_log_level(this->context, FREENECT_LOG_SPEW);
+        freenect_select_subdevices(this->context, (freenect_device_flags)(FREENECT_DEVICE_MOTOR | FREENECT_DEVICE_CAMERA));
+        int nr_devices = freenect_num_devices(this->context);
         if (nr_devices < 1) {
                 this->Close();
                 Nan::ThrowError("No kinect devices present");
                 return;
         }
 
-        if (freenect_open_device(this->context_, &this->device_, user_device_number) < 0) {
+        if (freenect_open_device(this->context, &this->device, user_device_number) < 0) {
                 this->Close();
                 Nan::ThrowError("Could not open device number\n");
                 return;
         }
 
 
-        freenect_set_user(this->device_, this);
+        freenect_set_user(this->device, this);
 
 
 }
@@ -211,32 +240,32 @@ explicit NKinect(double value = 0) : value_(value) {
 }
 
 void Close(){
-        this->running_ = false;
+        this->running = false;
 
-        if (this->device_ != NULL) {
-                if (freenect_close_device(this->device_) < 0) {
+        if (this->device != NULL) {
+                if (freenect_close_device(this->device) < 0) {
                         Nan::ThrowError("Error closing device");
                         return;
                 }
 
-                this->device_ = NULL;
+                this->device = NULL;
         }
 
-        if (this->context_ != NULL) {
-                if (freenect_shutdown(context_) < 0) {
+        if (this->context != NULL) {
+                if (freenect_shutdown(this->context) < 0) {
                         Nan::ThrowError("Error shutting down");
                         return;
                 }
 
-                this->context_ = NULL;
+                this->context = NULL;
         }
 }
 
 void ProcessEventsLoop(){
-        while(this->running_) {
+        while(this->running) {
                 //static timeval timeout = { 10, 0 };
-                //freenect_process_events_timeout(this->context_, &timeout);
-                freenect_process_events(this->context_);
+                //freenect_process_events_timeout(this->context, &timeout);
+                freenect_process_events(this->context);
         }
 }
 
@@ -256,7 +285,8 @@ static NAN_MODULE_INIT(Init) {
         Nan::SetAccessor(tpl->InstanceTemplate(), Nan::New<v8::String>("running").ToLocalChecked(), getRunning);
         Nan::SetAccessor(tpl->InstanceTemplate(), Nan::New<v8::String>("sending").ToLocalChecked(), getSending);
 
-        Nan::SetPrototypeMethod(tpl, "titlAngle", TitlAngle);
+        Nan::SetPrototypeMethod(tpl, "setTitlAngle", TitlAngle);
+        Nan::SetPrototypeMethod(tpl, "setLedStatus", LedStatus);
         Nan::SetPrototypeMethod(tpl, "startVideo", StartVideo);
         Nan::SetPrototypeMethod(tpl, "stopVideo", StopVideo);
         Nan::SetPrototypeMethod(tpl, "startDepth", StartDepth);
@@ -267,29 +297,6 @@ static NAN_MODULE_INIT(Init) {
         constructor().Reset(Nan::GetFunction(tpl).ToLocalChecked());
         Nan::Set(target, Nan::New("NKinect").ToLocalChecked(),
                  Nan::GetFunction(tpl).ToLocalChecked());
-}
-protected:
-
-freenect_frame_mode getFrameModeByOptions(NKinectFrameMode mode, const v8::Local<v8::Object> &options){
-        v8::Local<v8::Value> fmt = options->Get(Nan::New<v8::String>("format").ToLocalChecked());
-        v8::Local<v8::Value> res = options->Get(Nan::New<v8::String>("resolution").ToLocalChecked());
-
-        if(!fmt->IsNumber())
-            res = Nan::New<v8::Number>(FREENECT_RESOLUTION_MEDIUM);
-        switch (mode) {
-          case NKinectFrameModeDepth:
-              if(!fmt->IsNumber())
-                  res = Nan::New<v8::Number>(FREENECT_DEPTH_11BIT);
-              return freenect_find_depth_mode(static_cast<freenect_resolution>(res->Uint32Value()), static_cast<freenect_depth_format>(fmt->Uint32Value()));
-          break;
-          case NKinectFrameModeVideo:
-              if(!fmt->IsNumber())
-                  res = Nan::New<v8::Number>(FREENECT_VIDEO_RGB);
-              // printf("as %d", fmt->Uint32Value());
-              return freenect_find_video_mode(static_cast<freenect_resolution>(res->Uint32Value()), static_cast<freenect_video_format>(fmt->Uint32Value()));
-              // return freenect_find_video_mode(static_cast<freenect_resolution>(res->Uint32Value()), FREENECT_VIDEO_RGB);
-          break;
-        }
 }
 private:
 static NAN_METHOD(New) {
@@ -308,12 +315,12 @@ static NAN_METHOD(New) {
 
 static NAN_GETTER(getRunning) {
         NKinect* obj = Nan::ObjectWrap::Unwrap<NKinect>(info.Holder());
-        info.GetReturnValue().Set(Nan::New<v8::Boolean>(obj->running_));
+        info.GetReturnValue().Set(Nan::New<v8::Boolean>(obj->running));
 }
 
 static NAN_GETTER(getSending) {
         NKinect* obj = Nan::ObjectWrap::Unwrap<NKinect>(info.Holder());
-        info.GetReturnValue().Set(Nan::New<v8::Boolean>(obj->sending_));
+        info.GetReturnValue().Set(Nan::New<v8::Boolean>(obj->sending));
 }
 
 static NAN_METHOD(StartVideo) {
@@ -356,13 +363,13 @@ static NAN_METHOD(StartDepth) {
 
 static NAN_METHOD(Resume) {
         NKinect* obj = Nan::ObjectWrap::Unwrap<NKinect>(info.Holder());
-        obj->Resume_();
+        obj->Resume();
         info.GetReturnValue().Set(obj->handle());
 }
 
 static NAN_METHOD(Pause) {
         NKinect* obj = Nan::ObjectWrap::Unwrap<NKinect>(info.Holder());
-        obj->Pause_();
+        obj->Pause();
         info.GetReturnValue().Set(obj->handle());
 }
 
@@ -387,10 +394,13 @@ static NAN_METHOD(TitlAngle) {
 
         double angle = info[0]->NumberValue();
         NKinect* obj = Nan::ObjectWrap::Unwrap<NKinect>(info.Holder());
-        obj->Tilt(angle);
+        obj->SetTiltAngle(angle);
         info.GetReturnValue().Set(obj->handle());
 }
-
+static NAN_METHOD(LedStatus) {
+        NKinect* obj = Nan::ObjectWrap::Unwrap<NKinect>(info.Holder());
+        info.GetReturnValue().Set(obj->handle());
+}
 static inline Nan::Persistent<v8::Function> & constructor() {
         static Nan::Persistent<v8::Function> freenect_constructor;
         return freenect_constructor;
