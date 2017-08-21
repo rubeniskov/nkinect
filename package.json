@@ -1,6 +1,6 @@
 {
   "name": "nkinect",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Node kinect binding with libfreenect and libusb-1.0",
   "keywords": [
     "kinect",

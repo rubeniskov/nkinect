@@ -1,6 +1,7 @@
 #include <nan.h>
 #include <iostream>
 #include <unistd.h>
+#include <limits>
 
 extern "C" {
   #include <libfreenect/libfreenect.h>
@@ -10,12 +11,23 @@ enum NKinectFrameMode {
         NKinectFrameModeDepth, NKinectFrameModeVideo
 };
 
+struct NKinectInitOptions {
+  uint device = 0;
+  bool autoInit = true;
+  int maxTiltAngle = 31;
+  int minTiltAngle = -31;
+  freenect_loglevel logLevel = (freenect_loglevel)(FREENECT_LOG_DEBUG);
+  freenect_device_flags capabilities = (freenect_device_flags)(FREENECT_DEVICE_MOTOR | FREENECT_DEVICE_CAMERA);
+};
+
+
 class NKinect : public Nan::ObjectWrap {
 public:
 bool running = false;
 bool sending = false;
 freenect_device*       device;
 freenect_context*      context;
+freenect_raw_tilt_state* state;
 freenect_frame_mode videoMode;
 freenect_frame_mode depthMode;
 uv_async_t uv_async_video_callback;
@@ -26,16 +38,16 @@ uv_loop_t *loop = uv_default_loop();
 uv_thread_t event_thread;
 Nan::Callback *callback_video;
 Nan::Callback *callback_depth;
+NKinectInitOptions options;
+explicit NKinect(NKinectInitOptions opts) {
 
-explicit NKinect(double value = 0) : value_(value) {
-        int user_device_number = 0;
+        this->options = opts;
         if (freenect_init(&this->context, NULL) < 0) {
                 Nan::ThrowError("Error initializing freenect context");
                 return;
         }
-        freenect_set_log_level(this->context, FREENECT_LOG_DEBUG);
-        // freenect_set_log_level(this->context, FREENECT_LOG_SPEW);
-        freenect_select_subdevices(this->context, (freenect_device_flags)(FREENECT_DEVICE_MOTOR | FREENECT_DEVICE_CAMERA));
+        freenect_set_log_level(this->context, this->options.logLevel);
+        freenect_select_subdevices(this->context, this->options.capabilities);
         int nr_devices = freenect_num_devices(this->context);
         if (nr_devices < 1) {
                 this->Close();
@@ -43,15 +55,18 @@ explicit NKinect(double value = 0) : value_(value) {
                 return;
         }
 
-        if (freenect_open_device(this->context, &this->device, user_device_number) < 0) {
+        if (freenect_open_device(this->context, &this->device, this->options.device) < 0) {
                 this->Close();
                 Nan::ThrowError("Could not open device number\n");
                 return;
         }
 
-
         freenect_set_user(this->device, this);
+        this->state = freenect_get_tilt_state(this->device);
 
+        if(this->options.autoInit){
+              this->Resume();
+        }
 
 }
 ~NKinect() {
@@ -77,7 +92,7 @@ void StartDepthCapture(const v8::Local<v8::Function> &callback, const v8::Local<
         // Check if previous video capture running settings are the same and ignore stop and initialization
         this->StopDepthCapture();
         this->callback_depth = new Nan::Callback(callback);
-        this->depthMode = NKinect::freenect_get_frame_mode_by_options(NKinectFrameModeDepth, options);
+        this->depthMode = NKinect::freenect_find_mode_by_options(NKinectFrameModeDepth, options);
         if(!this->depthMode.is_valid) {
                 Nan::ThrowError("Invalid depth configuration\n");
                 return;
@@ -128,7 +143,7 @@ void StartVideoCapture(const v8::Local<v8::Function> &callback, const v8::Local<
         // Check if previous video capture running settings are the same and ignore stop and initialization
         this->StopVideoCapture();
         this->callback_video = new Nan::Callback(callback);
-        this->videoMode = NKinect::freenect_get_frame_mode_by_options(NKinectFrameModeVideo, options);
+        this->videoMode = NKinect::freenect_find_mode_by_options(NKinectFrameModeVideo, options);
         // this->videoMode = freenect_find_video_mode(FREENECT_RESOLUTION_MEDIUM, FREENECT_VIDEO_RGB);
         if(!this->videoMode.is_valid) {
                 Nan::ThrowError("Invalid video configuration\n");
@@ -161,8 +176,33 @@ void StopVideoCapture(){
         freenect_stop_video(this->device);
 }
 
+void SetLedState(freenect_led_options state){
+      if(freenect_set_led(this->device, state) < 0){
+          Nan::ThrowError("Error setting led state");
+      };
+
+}
+
+double GetLedState() {
+         return 0;
+}
+
 void SetTiltAngle(const double angle) {
-        freenect_set_tilt_degs(this->device, angle);
+        if(freenect_set_tilt_degs(this->device,
+              std::min<double>(this->options.maxTiltAngle,
+              std::max<double>(this->options.minTiltAngle, angle))) < 0){
+              Nan::ThrowError("Error setting tilt angle");
+        }
+
+}
+
+double GetTiltAngle() {
+         return freenect_get_tilt_degs(this->state);
+}
+
+freenect_tilt_status_code
+GetTiltStatus() {
+         return freenect_get_tilt_status(this->state);
 }
 
 void Resume(){
@@ -255,7 +295,7 @@ freenect_device_depth_cb(freenect_device *dev, void *depth, uint32_t timestamp)
 
 static
 freenect_frame_mode
-freenect_get_frame_mode_by_options(NKinectFrameMode mode, const v8::Local<v8::Object> &options){
+freenect_find_mode_by_options(NKinectFrameMode mode, const v8::Local<v8::Object> &options){
         v8::Local<v8::Value> fmt = options->Get(Nan::New<v8::String>("format").ToLocalChecked());
         v8::Local<v8::Value> res = options->Get(Nan::New<v8::String>("resolution").ToLocalChecked());
 
@@ -270,9 +310,41 @@ freenect_get_frame_mode_by_options(NKinectFrameMode mode, const v8::Local<v8::Ob
 
         if(!fmt->IsNumber())
                 res = Nan::New<v8::Number>(FREENECT_VIDEO_RGB);
-        // printf("as %d", fmt->Uint32Value());
         return freenect_find_video_mode(static_cast<freenect_resolution>(res->Uint32Value()), static_cast<freenect_video_format>(fmt->Uint32Value()));
-        // return freenect_find_video_mode(static_cast<freenect_resolution>(res->Uint32Value()), FREENECT_VIDEO_RGB);
+}
+
+static
+NKinectInitOptions
+freenect_init_options(const v8::Local<v8::Object> &options){
+    v8::Local<v8::Value> device = options->Get(Nan::New<v8::String>("device").ToLocalChecked());
+    v8::Local<v8::Value> autoinit = options->Get(Nan::New<v8::String>("auto").ToLocalChecked());
+    v8::Local<v8::Value> maxTiltAngle = options->Get(Nan::New<v8::String>("maxTiltAngle").ToLocalChecked());
+    v8::Local<v8::Value> minTiltAngle = options->Get(Nan::New<v8::String>("minTiltAngle").ToLocalChecked());
+    v8::Local<v8::Value> logLevel = options->Get(Nan::New<v8::String>("logLevel").ToLocalChecked());
+    v8::Local<v8::Value> capabilities = options->Get(Nan::New<v8::String>("capabilities").ToLocalChecked());
+
+    // bool autoInit = true;
+    // int maxTiltAngle = 31;
+    // int minTiltAngle = -31;
+    // freenect_loglevel loglevel = (freenect_device_flags)(FREENECT_LOG_DEBUG);
+    // freenect_device_flags capabilities = (freenect_device_flags)(FREENECT_DEVICE_MOTOR | FREENECT_DEVICE_CAMERA);
+
+    NKinectInitOptions opts;
+
+    if(device->IsNumber())
+            opts.device = device->NumberValue();
+    if(autoinit->IsBoolean())
+            opts.autoInit = autoinit->IsTrue();
+    if(maxTiltAngle->IsNumber())
+            opts.maxTiltAngle = maxTiltAngle->NumberValue();
+    if(minTiltAngle->IsNumber())
+            opts.minTiltAngle = minTiltAngle->NumberValue();
+    if(logLevel->IsNumber())
+            opts.logLevel = (freenect_loglevel)(logLevel->NumberValue());
+    if(capabilities->IsNumber())
+            opts.capabilities = (freenect_device_flags)(capabilities->NumberValue());
+
+    return opts;
 }
 
 static NAN_MODULE_INIT(Init) {
@@ -283,14 +355,16 @@ static NAN_MODULE_INIT(Init) {
         Nan::SetAccessor(tpl->InstanceTemplate(), Nan::New<v8::String>("running").ToLocalChecked(), getRunning);
         Nan::SetAccessor(tpl->InstanceTemplate(), Nan::New<v8::String>("sending").ToLocalChecked(), getSending);
 
-        Nan::SetPrototypeMethod(tpl, "setTiltAngle", TiltAngle);
-        Nan::SetPrototypeMethod(tpl, "setLedStatus", LedStatus);
-        Nan::SetPrototypeMethod(tpl, "startVideo", StartVideo);
-        Nan::SetPrototypeMethod(tpl, "stopVideo", StopVideo);
-        Nan::SetPrototypeMethod(tpl, "startDepth", StartDepth);
-        Nan::SetPrototypeMethod(tpl, "stopDepth", StopDepth);
-        Nan::SetPrototypeMethod(tpl, "resume", Resume);
-        Nan::SetPrototypeMethod(tpl, "pause", Pause);
+        Nan::SetPrototypeMethod(tpl, "setTiltAngle", NKinect::setTiltAngle);
+        Nan::SetPrototypeMethod(tpl, "getTiltAngle", NKinect::GetTiltAngle);
+        Nan::SetPrototypeMethod(tpl, "setLedState", NKinect::SetLedState);
+        Nan::SetPrototypeMethod(tpl, "getLedState", NKinect::GetLedState);
+        Nan::SetPrototypeMethod(tpl, "startVideo", NKinect::StartVideo);
+        Nan::SetPrototypeMethod(tpl, "stopVideo", NKinect::StopVideo);
+        Nan::SetPrototypeMethod(tpl, "startDepth", NKinect::StartDepth);
+        Nan::SetPrototypeMethod(tpl, "stopDepth", NKinect::StopDepth);
+        Nan::SetPrototypeMethod(tpl, "resume", NKinect::Resume);
+        Nan::SetPrototypeMethod(tpl, "pause", NKinect::Pause);
 
         constructor().Reset(Nan::GetFunction(tpl).ToLocalChecked());
         Nan::Set(target, Nan::New("NKinect").ToLocalChecked(),
@@ -299,8 +373,19 @@ static NAN_MODULE_INIT(Init) {
 private:
 static NAN_METHOD(New) {
         if (info.IsConstructCall()) {
-                double value = info[0]->IsUndefined() ? 0 : Nan::To<double>(info[0]).FromJust();
-                NKinect *obj = new NKinect(value);
+                NKinectInitOptions opts;
+                if(info[0]->IsObject())
+                    opts = freenect_init_options(info[0].As<v8::Object>());
+
+                printf("autoInit %d, device %d, maxTiltAngle %d, minTiltAngle %d, logLevel %d, capabilities %d\n",
+                opts.autoInit,
+                opts.device,
+                opts.maxTiltAngle,
+                opts.minTiltAngle,
+                opts.logLevel,
+                opts.capabilities);
+
+                NKinect *obj = new NKinect(opts);
                 obj->Wrap(info.This());
                 info.GetReturnValue().Set(info.This());
         } else {
@@ -382,12 +467,18 @@ static NAN_METHOD(StopDepth) {
         obj->StopDepthCapture();
         info.GetReturnValue().Set(obj->handle());
 }
-static NAN_METHOD(TiltAngle) {
+
+static NAN_METHOD(GetTiltAngle) {
+        NKinect* obj = Nan::ObjectWrap::Unwrap<NKinect>(info.Holder());
+        info.GetReturnValue().Set(obj->GetTiltAngle());
+}
+
+static NAN_METHOD(setTiltAngle) {
         if (info.Length() == 1) {
                 if (!info[0]->IsNumber())
-                        return Nan::ThrowError("Tilt argument must be a number\n");
+                        return Nan::ThrowError("Tilt argument must be a number");
         } else {
-                return Nan::ThrowError("Expecting at least one argument with the led status");
+                return Nan::ThrowError("Expecting at least one argument with the tilt angle");
         }
 
         double angle = info[0]->NumberValue();
@@ -395,16 +486,30 @@ static NAN_METHOD(TiltAngle) {
         obj->SetTiltAngle(angle);
         info.GetReturnValue().Set(obj->handle());
 }
-static NAN_METHOD(LedStatus) {
+
+static NAN_METHOD(SetLedState) {
+        if (info.Length() == 1) {
+                if (!info[0]->IsNumber())
+                        return Nan::ThrowError("Led State argument must be a number");
+        } else {
+                return Nan::ThrowError("Expecting at least one argument with the led state");
+        }
+
+        freenect_led_options state = (freenect_led_options)(info[0]->NumberValue());
         NKinect* obj = Nan::ObjectWrap::Unwrap<NKinect>(info.Holder());
+        obj->SetLedState(state);
         info.GetReturnValue().Set(obj->handle());
 }
+
+static NAN_METHOD(GetLedState) {
+        NKinect* obj = Nan::ObjectWrap::Unwrap<NKinect>(info.Holder());
+        info.GetReturnValue().Set(obj->GetLedState());
+}
+
 static inline Nan::Persistent<v8::Function> & constructor() {
         static Nan::Persistent<v8::Function> freenect_constructor;
         return freenect_constructor;
 }
-
-double value_;
 };
 
 NODE_MODULE(objectwrapper, NKinect::Init)

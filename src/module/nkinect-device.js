@@ -89,17 +89,27 @@ export default class NKinectDevice {
     get running() {
         return this._context.sending;
     }
+    get titl_angle() {
+        return this.getTiltAngle();
+    }
+    get titl_status() {
+        return this.getTiltAngle.sending;
+    }
+    get led_status() {
+        return this._context.sending;
+    }
     constructor(options){
         this._options = {
             device: 0,
-            auto: true,
+            autoInit: true,
             maxTiltAngle: 31,
             minTiltAngle: -31,
-            loglevel: NKinectDevice.LOGLEVEL.FATAL,
+            logOutput: 'stdout',
+            logLevel: NKinectDevice.LOGLEVEL.FATAL,
             capabilities: NKinectDevice.CAPABILITIES.MOTOR | NKinectDevice.CAPABILITIES.CAMERA,
             ...(typeof(options) === 'number' ? {device: options} : options || {})
         };
-        this._context = bindings('nkinect').NKinect(options);
+        this._context = bindings('nkinect').NKinect(this._options);
     }
     resume(){
       this._context.resume();
