@@ -7,18 +7,19 @@ extern "C" {
   #include <libfreenect/libfreenect.h>
 }
 
-enum NKinectFrameMode {
+typedef enum {
         NKinectFrameModeDepth, NKinectFrameModeVideo
-};
+} NKinectFrameMode;
 
-struct NKinectInitOptions {
+typedef struct {
   uint device = 0;
   bool autoInit = true;
+  int delay = 0;
   int maxTiltAngle = 31;
   int minTiltAngle = -31;
   freenect_loglevel logLevel = (freenect_loglevel)(FREENECT_LOG_DEBUG);
   freenect_device_flags capabilities = (freenect_device_flags)(FREENECT_DEVICE_MOTOR | FREENECT_DEVICE_CAMERA);
-};
+} NKinectInitOptions;
 
 
 class NKinect : public Nan::ObjectWrap {
@@ -245,10 +246,23 @@ void Close(){
 }
 
 void ProcessEventsLoop(){
+        freenect_raw_tilt_state * state;
+        int8_t tilt_angle;
         while(this->running) {
-                //static timeval timeout = { 10, 0 };
-                //freenect_process_events_timeout(this->context, &timeout);
+            tilt_angle = this->state->tilt_angle;
+            // state = (freenect_raw_tilt_state * )this->state;
+            // printf("%d\n", this->state->tilt_angle);
+            // memcpy(&this->state, &state,sizeof(freenect_raw_tilt_state));
+            if(this->options.delay != 0){
+                static timeval timeout = { 0, this->options.delay };
+                freenect_process_events_timeout(this->context, &timeout);
+            } else {
                 freenect_process_events(this->context);
+            }
+
+            // printf("%d \n", /*state.tilt_angle,*/ this->state->tilt_angle);
+            // printf("%d \n", /*state.tilt_angle,*/ this->GetTiltAngle());
+            printf("%d <-> %d\n", tilt_angle,  this->state->tilt_angle);
         }
 }
 

@@ -102,6 +102,7 @@ export default class NKinectDevice {
         this._options = {
             device: 0,
             autoInit: true,
+            delay: null,
             maxTiltAngle: 31,
             minTiltAngle: -31,
             logOutput: 'stdout',

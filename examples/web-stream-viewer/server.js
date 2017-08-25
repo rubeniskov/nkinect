@@ -94,8 +94,6 @@ app.post('/tilt', function(req, res) {
   res.send({status: 'OK'})
 });
 
-kinect.resume();
-
 http.createServer(app).listen(program.port, program.host, function() {
   console.log('Listen on %s:%s', program.host, program.port);
 });
